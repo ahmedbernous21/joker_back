@@ -1,13 +1,13 @@
 
 run:
+	python3 manage.py runserver
+docker:
 	sudo docker-compose up
-build:
-	sudo docker-compose up --build
 migrate:
-	sudo docker-compose exec joker-server python3 manage.py migrate
+	python3 manage.py runserver
 mkmigrate:
-	sudo docker-compose exec joker-server python3 manage.py makemigrations
+	python3 manage.py makemigrations
 shell:
-	sudo docker-compose exec joker-server python3 manage.py shell
+	python3 manage.py shell
 cadmin:
-	sudo docker-compose exec joker-server python3 manage.py createsuperuser
+	python3 manage.py createsuperuser
