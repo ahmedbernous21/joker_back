@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -27,8 +28,21 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
+if not os.getenv("ENV"):
+    with open(".env", "r") as f:
+        for line in f:
+            if line.strip() == "" or line.startswith("#"):
+                continue
+            key, value = line.strip().split("=", 1)
+            if key in ["DB_HOST"]:
+                value = "localhost"
+            if not os.getenv(key):
+                os.environ[key] = value
 # Application definition
+DB_PORT = os.getenv("DB_PORT")
+DB_HOST = os.getenv("DB_HOST")
+FRONT_HOST = os.getenv("FRONT_HOST")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -102,11 +116,11 @@ ACCOUNT_USERNAME_REQUIRED = False
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "myproject",
-        "USER": "myprojectuser",
-        "PASSWORD": "myprojectpassword",
-        "HOST": "db",
-        "PORT": "5432",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": POSTGRES_PASSWORD,
+        "HOST": DB_HOST,
+        "PORT": DB_PORT,
     }
 }
 

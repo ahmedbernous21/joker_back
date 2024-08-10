@@ -7,3 +7,4 @@ djangorestframework==3.14.0
 flake8==6.0.0
 sqlparse==0.4.4
 psycopg2==2.9.9
+psycopg2-binary>=2.9.0

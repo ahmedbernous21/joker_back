@@ -21,3 +21,4 @@ angular_errors.log
 /socks
 media/fixtures/service-picture*
 celerybeat-schedule
+.env

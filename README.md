@@ -8,6 +8,6 @@ sudo docker-compose up
 
 # run django commands on docker
 
-sudo docker-compose exec web python3 manage.py makemigrations
-sudo docker-compose exec web python3 manage.py migrate
-sudo docker-compose exec web python3 manage.py shell
+sudo docker-compose exec joker-server python3 manage.py makemigrations
+sudo docker-compose exec joker-server python3 manage.py migrate
+sudo docker-compose exec joker-server python3 manage.py shell
