@@ -116,7 +116,7 @@ ACCOUNT_USERNAME_REQUIRED = False
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "postgres",
+        "NAME": "postgres1",
         "USER": "postgres",
         "PASSWORD": POSTGRES_PASSWORD,
         "HOST": DB_HOST,

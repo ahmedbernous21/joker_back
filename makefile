@@ -11,3 +11,4 @@ shell:
 	python3 manage.py shell
 cadmin:
 	python3 manage.py createsuperuser
+ 

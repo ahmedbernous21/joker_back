@@ -51,3 +51,5 @@ postgres-data-dev/*
 postgres-data-staging/*
 postgres-data-prod/*
 backups
+
+venv/
