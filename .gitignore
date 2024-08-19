@@ -22,3 +22,4 @@ angular_errors.log
 media/fixtures/service-picture*
 celerybeat-schedule
 .env
+.env
