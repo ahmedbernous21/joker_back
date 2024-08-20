@@ -18,6 +18,6 @@ class UserList(generics.ListCreateAPIView):
             login(self.request, user)
 
 
-class Request(generics.CreateAPIView):
+class RequestList(generics.ListCreateAPIView):
     queryset = Request.objects.all()
     serializer_class = RequestSerializer
