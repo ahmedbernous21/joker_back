@@ -36,7 +36,6 @@ class StatisticsView(APIView):
             today = timezone.now().date()
             start_date = end_date = today
 
-        # Filter requests based on the date range
         requests = Request.objects.filter(
             creation_date__date__range=[start_date, end_date]
         )
@@ -54,10 +53,6 @@ class StatisticsView(APIView):
             if total_requests > 0
             else 0
         )
-
-        average_request_time = requests.filter(state="finished").aggregate(
-            avg_time=Avg("submitted_date" - "creation_date")
-        )["avg_time"]
 
         total_revenue = (
             requests.filter(state="finished").aggregate(total_revenue=Sum("price"))[
@@ -78,10 +73,6 @@ class StatisticsView(APIView):
         )
         top_article = top_article["article"] if top_article else ""
 
-        size_distribution = (
-            requests.values("size").annotate(count=Count("size")).order_by("size")
-        )
-
         top_color = (
             requests.values("color")
             .annotate(count=Count("color"))
@@ -98,13 +89,11 @@ class StatisticsView(APIView):
             "finished_requests": finished_requests,
             "delivered_requests": delivered_requests,
             "conversion_rate": conversion_rate,
-            "average_request_time": average_request_time,
             "total_revenue": total_revenue,
             "repetitions_count": repetitions_count,
             "top_article": top_article,
-            "average_size_distribution": dict(size_distribution),
             "top_color": top_color,
         }
-
         serializer = StatisticsSerializer(data)
+        print("here", serializer)
         return Response(serializer.data)
