@@ -82,6 +82,7 @@ class Request(models.Model):
     referrer = models.TextField(null=True, blank=True)
     repetitions = models.PositiveIntegerField(default=0)
     uuid = models.CharField(max_length=255, blank=True, null=True)
+    price = models.PositiveIntegerField(default=0)
 
     @property
     def first_visit_date(self):
@@ -99,3 +100,21 @@ class Picture(models.Model):
         blank=True,
         related_name="pictures",
     )
+
+
+class Statistics(models.Model):
+    start_date = models.DateField(default=timezone.now)
+    finish_date = models.DateField(default=timezone.now)
+    total_requests = models.PositiveIntegerField(default=0)
+    new_requests = models.PositiveIntegerField(default=0)
+    unseen_requests = models.PositiveIntegerField(default=0)
+    in_progress_requests = models.PositiveIntegerField(default=0)
+    finished_requests = models.PositiveIntegerField(default=0)
+    delivered_requests = models.PositiveIntegerField(default=0)
+    conversion_rate = models.FloatField(default=0.0)
+    average_request_time = models.DurationField(null=True, blank=True)
+    total_revenue = models.PositiveIntegerField(default=0)
+    repetitions_count = models.PositiveIntegerField(default=0)
+    top_article = models.CharField(max_length=255, default="")
+    average_size_distribution = models.JSONField(default=dict)
+    top_color = models.CharField(max_length=255, default="")
