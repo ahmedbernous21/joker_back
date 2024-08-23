@@ -43,6 +43,7 @@ DB_PORT = os.getenv("DB_PORT")
 DB_HOST = os.getenv("DB_HOST")
 FRONT_HOST = os.getenv("FRONT_HOST")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
+  
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -75,7 +76,7 @@ MIDDLEWARE = [
 ]
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:4200",
+    "http://localhost:5173",
 ]
 ROOT_URLCONF = "joker.urls"
 AUTHENTICATION_CLASSES = ("dj_rest_auth.authentication.AllAuthJWTAuthentication",)
