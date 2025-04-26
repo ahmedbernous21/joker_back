@@ -66,12 +66,18 @@ class Request(models.Model):
     article = models.CharField(max_length=255, choices=article_choices, default="")
     description = models.TextField(default="", blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=255, blank=True, null=True)  # Added city field
+    name = models.CharField(max_length=255, blank=True, null=True)  # Added name field
     text = models.TextField(max_length=255, blank=True, null=True)
     design = models.ImageField(upload_to="media", blank=True, null=True)
+    # Store designs as base64 strings for easier handling
+    frontImage = models.TextField(null=True, blank=True)
+    backImage = models.TextField(null=True, blank=True)
     color = models.CharField(max_length=255, default="white")
     size = models.CharField(
         max_length=255, choices=size_choices, default="", blank=True, null=True
     )
+    quantity = models.PositiveIntegerField(default=1)  # Added quantity field
     creation_date = models.DateTimeField(default=timezone.now)
     is_seen = models.BooleanField(default=False)
     state = models.CharField(max_length=255, choices=request_choices, default="unseen")

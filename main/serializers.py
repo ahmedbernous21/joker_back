@@ -5,18 +5,20 @@ from .models import User, Request
 
 
 class UserSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = User
         fields = "__all__"
 
-
 class RequestSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Request
         fields = "__all__"
-
+        
+    def create(self, validated_data):
+        # Ensure we're handling the base64 image data correctly
+        # You might need to add additional processing here if needed
+        request = Request.objects.create(**validated_data)
+        return request
 
 class StatisticsSerializer(serializers.Serializer):
     total_requests = serializers.IntegerField()

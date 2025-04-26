@@ -1,13 +1,26 @@
-from rest_framework import generics
+from rest_framework import viewsets, status, generics
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from django.contrib.auth import authenticate, login
+from django.utils import timezone
+from django.db.models import Count, Sum
 from .serializers import UserSerializer, RequestSerializer, StatisticsSerializer
 from .models import User, Request
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from django.utils import timezone
-from django.db.models import Avg, Count, Sum
+from rest_framework.permissions import IsAuthenticated
 
 
+class UserInfoView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        return Response({
+            'id': user.id,
+            'email': user.email,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser
+        })
 class UserList(generics.ListCreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -22,78 +35,151 @@ class UserList(generics.ListCreateAPIView):
             login(self.request, user)
 
 
-class RequestList(generics.ListCreateAPIView):
-    queryset = Request.objects.all()
+class RequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing article requests.
+    Provides standard CRUD operations plus custom actions.
+    """
+    queryset = Request.objects.all().order_by('-creation_date')
     serializer_class = RequestSerializer
-
-
-class StatisticsView(APIView):
-    def get(self, request, *args, **kwargs):
-        start_date = request.query_params.get("start_date")
-        end_date = request.query_params.get("end_date")
-
-        if not start_date or not end_date:
-            today = timezone.now().date()
-            start_date = end_date = today
-
-        requests = Request.objects.filter(
-            creation_date__date__range=[start_date, end_date]
-        )
-
-        # Calculate statistics
-        total_requests = requests.count()
-        unseen_requests = requests.filter(state="unseen").count()
-        pending_requests = requests.filter(state="pending").count()
-        in_progress_requests = requests.filter(state="progress").count()
-        finished_requests = requests.filter(state="finished").count()
-        delivered_requests = requests.filter(is_delivered=True).count()
-
-        conversion_rate = (
-            (finished_requests + delivered_requests) / total_requests * 100
-            if total_requests > 0
-            else 0
-        )
-
-        total_revenue = (
-            requests.filter(state="finished").aggregate(total_revenue=Sum("price"))[
-                "total_revenue"
-            ]
-            or 0
-        )
-
-        repetitions_count = (
-            requests.aggregate(Sum("repetitions"))["repetitions__sum"] or 0
-        )
-
-        top_article = (
-            requests.values("article")
-            .annotate(count=Count("article"))
-            .order_by("-count")
-            .first()
-        )
-        top_article = top_article["article"] if top_article else ""
-
-        top_color = (
-            requests.values("color")
-            .annotate(count=Count("color"))
-            .order_by("-count")
-            .first()
-        )
-        top_color = top_color["color"] if top_color else ""
-
-        data = {
-            "total_requests": total_requests,
-            "unseen_requests": unseen_requests,
-            "pending_requests": pending_requests,
-            "in_progress_requests": in_progress_requests,
-            "finished_requests": finished_requests,
-            "delivered_requests": delivered_requests,
-            "conversion_rate": conversion_rate,
-            "total_revenue": total_revenue,
-            "repetitions_count": repetitions_count,
-            "top_article": top_article,
-            "top_color": top_color,
-        }
-        serializer = StatisticsSerializer(data)
-        print("here", serializer)
+    
+    @action(detail=False, methods=['get'])
+    def unseen(self, request):
+        """Get all unseen requests"""
+        unseen_requests = Request.objects.filter(state="unseen")
+        serializer = self.get_serializer(unseen_requests, many=True)
         return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def pending(self, request):
+        """Get all pending requests"""
+        pending_requests = Request.objects.filter(state="pending")
+        serializer = self.get_serializer(pending_requests, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def progress(self, request):
+        """Get all in-progress requests"""
+        in_progress = Request.objects.filter(state="progress")
+        serializer = self.get_serializer(in_progress, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods=['get'])
+    def finished(self, request):
+        """Get all finished requests"""
+        finished = Request.objects.filter(state="finished")
+        serializer = self.get_serializer(finished, many=True)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def mark_delivered(self, request, pk=None):
+        """Mark a request as delivered"""
+        request_obj = self.get_object()
+        request_obj.is_delivered = True
+        request_obj.save()
+        return Response({'status': 'request marked as delivered'})
+    
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        """Update the status of a request"""
+        request_obj = self.get_object()
+        new_status = request.data.get('status')
+        
+        if new_status not in ["unseen", "pending", "progress", "finished"]:
+            return Response({'error': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        request_obj.state = new_status
+        request_obj.save()
+        return Response({'status': f'request status updated to {new_status}'})
+
+
+class StatisticsView(viewsets.ViewSet):
+    """
+    ViewSet for retrieving statistics about requests.
+    """
+    serializer_class = StatisticsSerializer
+    
+    @action(detail=False, methods=['get'])
+    def calculate(self, request):
+        """Calculate statistics for requests"""
+        try:
+            start_date = request.query_params.get("start_date")
+            end_date = request.query_params.get("end_date")
+
+            if not start_date or not end_date:
+                today = timezone.now().date()
+                start_date = end_date = today
+
+            # Make sure we're using proper date filtering
+            requests = Request.objects.filter(
+                creation_date__date__range=[start_date, end_date]
+            )
+
+            # Calculate statistics with proper error handling
+            total_requests = requests.count()
+            unseen_requests = requests.filter(state="unseen").count()
+            pending_requests = requests.filter(state="pending").count()
+            in_progress_requests = requests.filter(state="progress").count()
+            finished_requests = requests.filter(state="finished").count()
+            delivered_requests = requests.filter(is_delivered=True).count()
+
+            conversion_rate = (
+                (finished_requests + delivered_requests) / total_requests * 100
+                if total_requests > 0
+                else 0
+            )
+
+            total_revenue = (
+                requests.filter(state__in=["finished", "delivered"]).aggregate(Sum("price"))["price__sum"]
+                or 0
+            )
+
+            repetitions_count = (
+                requests.aggregate(Sum("repetitions"))["repetitions__sum"] or 0
+            )
+
+            # Handle potentially missing data
+            try:
+                top_article_obj = (
+                    requests.values("article")
+                    .annotate(count=Count("article"))
+                    .order_by("-count")
+                    .first()
+                )
+                top_article = top_article_obj["article"] if top_article_obj else ""
+            except:
+                top_article = ""
+
+            try:
+                top_color_obj = (
+                    requests.values("color")
+                    .annotate(count=Count("color"))
+                    .order_by("-count")
+                    .first()
+                )
+                top_color = top_color_obj["color"] if top_color_obj else ""
+            except:
+                top_color = ""
+
+            data = {
+                "total_requests": total_requests,
+                "unseen_requests": unseen_requests,
+                "pending_requests": pending_requests,
+                "in_progress_requests": in_progress_requests,
+                "finished_requests": finished_requests,
+                "delivered_requests": delivered_requests,
+                "conversion_rate": conversion_rate,
+                "total_revenue": total_revenue,
+                "repetitions_count": repetitions_count,
+                "top_article": top_article,
+                "top_color": top_color,
+            }
+            serializer = StatisticsSerializer(data)
+            return Response(serializer.data)
+        except Exception as e:
+            # Better error handling
+            print(f"Error calculating statistics: {str(e)}")
+            return Response(
+                {"error": "Failed to calculate statistics"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
