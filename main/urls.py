@@ -1,9 +1,14 @@
-from django.urls import path
-from .views import UserList, RequestList, StatisticsView
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import UserList, RequestViewSet, StatisticsView, UserInfoView
 
+# Create a router and register our viewset
+router = DefaultRouter()
+router.register(r'requests', RequestViewSet, basename='request')
 
 urlpatterns = [
-    path("api/users/", UserList.as_view(), name="users"),
-    path("api/requests/", RequestList.as_view(), name="requests"),
-    path("api/statistics/", StatisticsView.as_view(), name="statistics"),
+    path('', include(router.urls)),  # This creates all CRUD endpoints for requests
+    path('users/', UserList.as_view(), name='users'),
+    path('statistics/calculate/', StatisticsView.as_view({'get': 'calculate'}), name='stats-calculate'),
+    path('auth/user-info/', UserInfoView.as_view(), name='user-info'),
 ]
